@@ -55,6 +55,15 @@ public class ClickHouseTLPBase extends TernaryLogicPartitioningOracleBase<ClickH
                     .collect(Collectors.toList()));
             select.setJoinClauses(joinStatements);
         }
+        if (Randomly.getBoolean()) {
+            List<ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting> allSettings =
+                Randomly.nonEmptySubset(ClickHouseExpression.ClickHouseSetting.possibleSettings);
+
+            for (ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting setting : allSettings) {
+                select.getSettings().add(new ClickHouseExpression.ClickHouseSetting(setting));
+            }
+        }
+
         gen.addColumns(columns);
         int small = Randomly.smallNumber();
         List<ClickHouseExpression> from = range(0, 1 + small)

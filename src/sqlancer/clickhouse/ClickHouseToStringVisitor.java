@@ -14,6 +14,7 @@ import sqlancer.clickhouse.ast.ClickHouseSelect;
 import sqlancer.clickhouse.ast.ClickHouseTableReference;
 import sqlancer.clickhouse.ast.ClickHouseUnaryPostfixOperation;
 import sqlancer.clickhouse.ast.ClickHouseUnaryPrefixOperation;
+import sqlancer.clickhouse.ast.ClickHouseExpression.ClickHouseSetting;
 import sqlancer.common.visitor.ToStringVisitor;
 
 public class ClickHouseToStringVisitor extends ToStringVisitor<ClickHouseExpression> implements ClickHouseVisitor {
@@ -32,6 +33,13 @@ public class ClickHouseToStringVisitor extends ToStringVisitor<ClickHouseExpress
         sb.append(" (");
         visit(op.getRight());
         sb.append(")");
+    }
+
+    @Override
+    public void visit(ClickHouseSetting op) {
+        sb.append(op.getKey().getTextRepresentation());
+        sb.append(" = ");
+        sb.append(op.getValue());
     }
 
     @Override
@@ -100,6 +108,18 @@ public class ClickHouseToStringVisitor extends ToStringVisitor<ClickHouseExpress
         if (!select.getOrderByClauses().isEmpty()) {
             sb.append(" ORDER BY ");
             visit(select.getOrderByClauses());
+        }
+        if (!select.getSettings().isEmpty()) {
+            int i = 0;
+            List<ClickHouseExpression.ClickHouseSetting> settings = select.getSettings();
+
+            sb.append(" SETTINGS ");
+            for (ClickHouseExpression.ClickHouseSetting setting : settings) {
+                if (i++ != 0) {
+                    sb.append(", ");
+                }
+                visit(setting);
+            }
         }
         if (inner) {
             sb.append(")");

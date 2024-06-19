@@ -1,5 +1,6 @@
 package sqlancer.clickhouse.ast;
 
+import sqlancer.Randomly;
 import sqlancer.common.visitor.UnaryOperation;
 
 public abstract class ClickHouseExpression {
@@ -166,6 +167,73 @@ public abstract class ClickHouseExpression {
         @Override
         public boolean omitBracketsWhenPrinting() {
             return true;
+        }
+    }
+
+    public static class ClickHouseSetting extends ClickHouseExpression {
+
+        public enum ClickHouseSingleSetting {
+            JOIN_ALGORITHM("join_algorithm", new String[]{"'default'", "'grace_hash'", "'hash'", "'parallel_hash'", "'parallel_hash'",
+                                                                             "'partial_merge'", "'direct'", "'auto'", "'full_sorting_merge'", "'prefer_partial_merge'"}),
+            JOIN_ANY_TAKE_LAST_ROW("join_any_take_last_row", new String[]{"0", "1"}),
+            JOIN_USE_NULLS("join_use_nulls", new String[]{"0", "1"}),
+            PARTIAL_MERGE_JOIN_OPTIMIZATIONS("partial_merge_join_optimizations", new String[]{"0", "1"}),
+            PARTIAL_MERGE_JOIN_ROWS_IN_RIGHT_BLOCKS("partial_merge_join_rows_in_right_blocks", new String[]{"1000", "10000", "32000", "65536", "100000"}),
+            JOIN_ON_DISK_MAX_FILES_TO_MERGE("join_on_disk_max_files_to_merge", new String[]{"2", "3", "4", "64"}),
+            ANY_JOIN_DISTINCT_RIGHT_TABLE_KEYS("any_join_distinct_right_table_keys", new String[]{"0", "1"}),
+            AGGREGATE_FUNCTIONS_NULL_FOR_EMPTY("aggregate_functions_null_for_empty", new String[]{"0", "1"}),
+            ENABLE_OPTIMIZE_PREDICATE_EXPRESSION("enable_optimize_predicate_expression", new String[]{"0", "1"});
+
+            private final String textRepresentation;
+
+            private final String[] possibleValues;
+
+            ClickHouseSingleSetting(String textRepresentation, String[] possibleValues) {
+                this.textRepresentation = textRepresentation;
+                this.possibleValues = possibleValues.clone();
+            }
+
+            public String getPossibleValue() {
+                return Randomly.fromOptions(this.possibleValues);
+            }
+
+            public String getTextRepresentation() {
+                return this.textRepresentation;
+            }
+        }
+
+        public static ClickHouseSingleSetting[] possibleSettings = {
+            ClickHouseSingleSetting.JOIN_ALGORITHM,
+            ClickHouseSingleSetting.JOIN_ANY_TAKE_LAST_ROW,
+            ClickHouseSingleSetting.JOIN_USE_NULLS,
+            ClickHouseSingleSetting.PARTIAL_MERGE_JOIN_OPTIMIZATIONS,
+            ClickHouseSingleSetting.PARTIAL_MERGE_JOIN_ROWS_IN_RIGHT_BLOCKS,
+            ClickHouseSingleSetting.JOIN_ON_DISK_MAX_FILES_TO_MERGE,
+            ClickHouseSingleSetting.ANY_JOIN_DISTINCT_RIGHT_TABLE_KEYS,
+            ClickHouseSingleSetting.AGGREGATE_FUNCTIONS_NULL_FOR_EMPTY,
+            ClickHouseSingleSetting.ENABLE_OPTIMIZE_PREDICATE_EXPRESSION
+        };
+
+        private final ClickHouseSingleSetting key;
+
+        private final String value;
+
+        public ClickHouseSetting(ClickHouseSingleSetting setting) {
+            this.key = setting;
+            this.value = key.getPossibleValue();
+        }
+
+        public ClickHouseSetting(ClickHouseSingleSetting setting, String value) {
+            this.key = setting;
+            this.value = value;
+        }
+
+        public ClickHouseSingleSetting getKey() {
+            return key;
+        }
+
+        public String getValue() {
+            return value;
         }
     }
 }

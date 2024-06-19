@@ -15,6 +15,7 @@ public class ClickHouseSelect extends ClickHouseExpression {
     private List<ClickHouseExpression> fetchColumns = Collections.emptyList();
     private List<ClickHouseExpression.ClickHouseJoin> joinStatements = Collections.emptyList();
     private ClickHouseExpression havingClause;
+    private List<ClickHouseExpression.ClickHouseSetting> settings = Collections.emptyList();
 
     public enum SelectType {
         DISTINCT, ALL;
@@ -103,5 +104,13 @@ public class ClickHouseSelect extends ClickHouseExpression {
     public ClickHouseExpression getHavingClause() {
         assert orderByClause != null;
         return havingClause;
+    }
+
+    public void setSettings(List<ClickHouseExpression.ClickHouseSetting> settings) {
+        this.settings = settings;
+    }
+
+    public List<ClickHouseExpression.ClickHouseSetting> getSettings() {
+        return settings;
     }
 }

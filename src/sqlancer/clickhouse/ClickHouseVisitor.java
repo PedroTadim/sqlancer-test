@@ -13,6 +13,7 @@ import sqlancer.clickhouse.ast.ClickHouseSelect;
 import sqlancer.clickhouse.ast.ClickHouseTableReference;
 import sqlancer.clickhouse.ast.ClickHouseUnaryPostfixOperation;
 import sqlancer.clickhouse.ast.ClickHouseUnaryPrefixOperation;
+import sqlancer.clickhouse.ast.ClickHouseExpression.ClickHouseSetting;
 
 public interface ClickHouseVisitor {
     // TODO remove these default methods
@@ -22,6 +23,10 @@ public interface ClickHouseVisitor {
     }
 
     default void visit(ClickHouseBinaryLogicalOperation op) {
+
+    }
+
+    default void visit(ClickHouseSetting op) {
 
     }
 
@@ -68,6 +73,8 @@ public interface ClickHouseVisitor {
             visit((ClickHouseBinaryComparisonOperation) expr);
         } else if (expr instanceof ClickHouseBinaryLogicalOperation) {
             visit((ClickHouseBinaryLogicalOperation) expr);
+        } else if (expr instanceof ClickHouseSetting) {
+            visit((ClickHouseSetting) expr);
         } else if (expr instanceof ClickHouseConstant) {
             visit((ClickHouseConstant) expr);
         } else if (expr instanceof ClickHouseUnaryPrefixOperation) {

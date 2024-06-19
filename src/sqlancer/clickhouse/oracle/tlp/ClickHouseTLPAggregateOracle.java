@@ -12,6 +12,7 @@ import sqlancer.clickhouse.ClickHouseErrors;
 import sqlancer.clickhouse.ClickHouseProvider;
 import sqlancer.clickhouse.ClickHouseVisitor;
 import sqlancer.clickhouse.ast.ClickHouseAggregate;
+import sqlancer.clickhouse.ast.ClickHouseExpression;
 import sqlancer.clickhouse.ast.ClickHouseAliasOperation;
 
 public class ClickHouseTLPAggregateOracle extends ClickHouseTLPBase {
@@ -38,8 +39,10 @@ public class ClickHouseTLPAggregateOracle extends ClickHouseTLPBase {
                 windowFunction);
         select.setFetchColumns(Arrays.asList(aggregate));
 
+        select.getSettings().add(new ClickHouseExpression.ClickHouseSetting(
+            ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting.AGGREGATE_FUNCTIONS_NULL_FOR_EMPTY, "1"));
         String originalQuery = ClickHouseVisitor.asString(select);
-        originalQuery += " SETTINGS aggregate_functions_null_for_empty = 1";
+        select.getSettings().remove(select.getSettings().size() - 1);
 
         select.setFetchColumns(Arrays.asList(new ClickHouseAliasOperation(aggregate, "aggr")));
 

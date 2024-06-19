@@ -49,11 +49,21 @@ public class ClickHouseNoRECOracle extends NoRECBase<ClickHouseGlobalState>
             columns.addAll(joinStatements.stream().flatMap(j -> j.getRightTable().getColumnReferences().stream())
                     .collect(Collectors.toList()));
         }
+        List<ClickHouseExpression.ClickHouseSetting> settings = new ArrayList<>();
+        if (Randomly.getBoolean()) {
+            List<ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting> allSettings =
+                Randomly.nonEmptySubset(ClickHouseExpression.ClickHouseSetting.possibleSettings);
+
+            for (ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting setting : allSettings) {
+                settings.add(new ClickHouseExpression.ClickHouseSetting(setting));
+            }
+        }
+
         gen.addColumns(columns);
 
         ClickHouseExpression randomWhereCondition = gen.generateExpressionWithColumns(columns, 5);
-        int secondCount = getSecondQuery(table, randomWhereCondition, joinStatements);
-        int firstCount = getFirstQueryCount(table, columns, randomWhereCondition, joinStatements);
+        int secondCount = getSecondQuery(table, randomWhereCondition, joinStatements, settings);
+        int firstCount = getFirstQueryCount(table, columns, randomWhereCondition, joinStatements, settings);
         if (firstCount == -1 || secondCount == -1) {
             throw new IgnoreMeException();
         }
@@ -64,7 +74,8 @@ public class ClickHouseNoRECOracle extends NoRECBase<ClickHouseGlobalState>
     }
 
     private int getSecondQuery(ClickHouseExpression table, ClickHouseExpression whereClause,
-            List<ClickHouseExpression.ClickHouseJoin> joins) throws SQLException {
+            List<ClickHouseExpression.ClickHouseJoin> joins,
+            List<ClickHouseExpression.ClickHouseSetting> settings) throws SQLException {
         ClickHouseSelect select = new ClickHouseSelect();
 
         ClickHouseExpression inner = new ClickHouseAliasOperation(whereClause, "check");
@@ -72,6 +83,7 @@ public class ClickHouseNoRECOracle extends NoRECBase<ClickHouseGlobalState>
         select.setFetchColumns(Arrays.asList(inner));
         select.setFromClause(table);
         select.setJoinClauses(joins);
+        select.setSettings(settings);
         int secondCount = 0;
         unoptimizedQueryString = "SELECT SUM(check <> 0) FROM (" + ClickHouseToStringVisitor.asString(select)
                 + ") as res";
@@ -94,8 +106,8 @@ public class ClickHouseNoRECOracle extends NoRECBase<ClickHouseGlobalState>
     }
 
     private int getFirstQueryCount(ClickHouseExpression tableList, List<ClickHouseColumnReference> columns,
-            ClickHouseExpression randomWhereCondition, List<ClickHouseExpression.ClickHouseJoin> joins)
-            throws SQLException {
+            ClickHouseExpression randomWhereCondition, List<ClickHouseExpression.ClickHouseJoin> joins,
+            List<ClickHouseExpression.ClickHouseSetting> settings) throws SQLException {
         ClickHouseSelect select = new ClickHouseSelect();
         List<ClickHouseColumnReference> filteredColumns = Randomly.extractNrRandomColumns(columns,
                 (int) Randomly.getNotCachedInteger(1, columns.size()));
@@ -104,6 +116,7 @@ public class ClickHouseNoRECOracle extends NoRECBase<ClickHouseGlobalState>
         select.setFromClause(tableList);
         select.setWhereClause(randomWhereCondition);
         select.setJoinClauses(joins);
+        select.setSettings(settings);
         int firstCount = 0;
         optimizedQueryString = ClickHouseToStringVisitor.asString(select);
         SQLQueryAdapter q = new SQLQueryAdapter(optimizedQueryString, errors);

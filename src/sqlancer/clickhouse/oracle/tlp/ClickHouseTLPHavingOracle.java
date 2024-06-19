@@ -38,8 +38,15 @@ public class ClickHouseTLPHavingOracle extends ClickHouseTLPBase {
 
         select.setGroupByClause(groupByColumns);
         select.setHavingClause(null);
+
+        select.getSettings().add(new ClickHouseExpression.ClickHouseSetting(
+            ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting.AGGREGATE_FUNCTIONS_NULL_FOR_EMPTY, "1"));
+        // https://github.com/ClickHouse/ClickHouse/issues/12264
+        select.getSettings().add(new ClickHouseExpression.ClickHouseSetting(
+            ClickHouseExpression.ClickHouseSetting.ClickHouseSingleSetting.ENABLE_OPTIMIZE_PREDICATE_EXPRESSION, "0"));
         String originalQueryString = ClickHouseVisitor.asString(select);
-        originalQueryString += " SETTINGS aggregate_functions_null_for_empty=1, enable_optimize_predicate_expression=0"; // https://github.com/ClickHouse/ClickHouse/issues/12264
+        select.getSettings().remove(select.getSettings().size() - 1);
+        select.getSettings().remove(select.getSettings().size() - 1);
 
         List<String> resultSet = ComparatorHelper.getResultSetFirstColumnAsString(originalQueryString, errors, state);
 
