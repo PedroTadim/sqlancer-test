@@ -88,8 +88,6 @@ public interface ClickHouseVisitor {
             visit((ClickHouseAggregate) expr);
         } else if (expr instanceof ClickHouseAliasOperation) {
             visit((ClickHouseAliasOperation) expr);
-        } else if (expr instanceof ClickHouseExpression.ClickHouseJoinOnClause) {
-            visit((ClickHouseExpression.ClickHouseJoinOnClause) expr);
         } else {
             throw new AssertionError(expr);
         }

@@ -3,6 +3,7 @@ package sqlancer.clickhouse.ast;
 import org.junit.jupiter.api.Test;
 import sqlancer.clickhouse.ClickHouseSchema;
 import sqlancer.clickhouse.ClickHouseVisitor;
+import sqlancer.clickhouse.ast.ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator;
 import sqlancer.clickhouse.ast.constant.ClickHouseInt8Constant;
 import sqlancer.common.schema.TableIndex;
 
@@ -205,7 +206,7 @@ class ClickHouseToStringVisitorTest {
         select.setFetchColumns(Arrays.asList(a1_ref, a2_ref, b1_ref, b2_ref));
         select.setFromClause(table1_ref);
         ClickHouseExpression.ClickHouseJoin join = new ClickHouseExpression.ClickHouseJoin(table1_ref, table2_ref,
-                ClickHouseExpression.ClickHouseJoin.JoinType.CROSS);
+                ClickHouseExpression.ClickHouseJoin.JoinType.NONE, ClickHouseExpression.ClickHouseJoin.JoinModifier.NONE);
         select.setJoinClauses(Arrays.asList(join));
         String result = ClickHouseVisitor.asString(select);
         String answer = "SELECT t1.a1, t2.a2, t1.b1, t2.b2 FROM t1 JOIN t2";
@@ -247,7 +248,7 @@ class ClickHouseToStringVisitorTest {
         select.setFetchColumns(Arrays.asList(a1_ref, a2_ref, b1_ref, b2_ref));
         select.setFromClause(table1_ref);
         ClickHouseExpression.ClickHouseJoin join = new ClickHouseExpression.ClickHouseJoin(table1_ref, table2_ref,
-                ClickHouseExpression.ClickHouseJoin.JoinType.CROSS);
+                ClickHouseExpression.ClickHouseJoin.JoinType.NONE, ClickHouseExpression.ClickHouseJoin.JoinModifier.NONE);
         select.setJoinClauses(Arrays.asList(join));
         String result = ClickHouseVisitor.asString(select);
         String answer = "SELECT left.a1, left.b1, right.a2, right.b2 FROM t1 AS left JOIN t2 AS right";
@@ -288,10 +289,10 @@ class ClickHouseToStringVisitorTest {
         ClickHouseSelect select = new ClickHouseSelect();
         select.setFetchColumns(Arrays.asList(a1_ref, a2_ref, b1_ref, b2_ref));
         select.setFromClause(table1_ref);
-        ClickHouseExpression.ClickHouseJoinOnClause on = new ClickHouseExpression.ClickHouseJoinOnClause(a1_ref,
-                a2_ref);
+        ClickHouseBinaryComparisonOperation on = new ClickHouseBinaryComparisonOperation(a1_ref,
+                a2_ref, ClickHouseBinaryComparisonOperator.EQUALS);
         ClickHouseExpression.ClickHouseJoin join = new ClickHouseExpression.ClickHouseJoin(table1_ref, table2_ref,
-                ClickHouseExpression.ClickHouseJoin.JoinType.INNER, on);
+                ClickHouseExpression.ClickHouseJoin.JoinType.INNER, ClickHouseExpression.ClickHouseJoin.JoinModifier.NONE, on);
         select.setJoinClauses(Arrays.asList(join));
         String result = ClickHouseVisitor.asString(select);
         String answer = "SELECT t1.a1, t2.a2, t1.b1, t2.b2 FROM t1 INNER JOIN t2 ON ((t1.a1)=(t2.a2))";
@@ -332,13 +333,57 @@ class ClickHouseToStringVisitorTest {
         ClickHouseSelect select = new ClickHouseSelect();
         select.setFetchColumns(Arrays.asList(a1_ref, a2_ref, b1_ref, b2_ref));
         select.setFromClause(table1_ref);
-        ClickHouseExpression.ClickHouseJoinOnClause on = new ClickHouseExpression.ClickHouseJoinOnClause(a1_ref,
-                a2_ref);
+        ClickHouseBinaryComparisonOperation on = new ClickHouseBinaryComparisonOperation(a1_ref,
+                a2_ref, ClickHouseBinaryComparisonOperator.EQUALS);
         ClickHouseExpression.ClickHouseJoin join = new ClickHouseExpression.ClickHouseJoin(table1_ref, table2_ref,
-                ClickHouseExpression.ClickHouseJoin.JoinType.INNER, on);
+                ClickHouseExpression.ClickHouseJoin.JoinType.INNER, ClickHouseExpression.ClickHouseJoin.JoinModifier.NONE, on);
         select.setJoinClauses(Arrays.asList(join));
         String result = ClickHouseVisitor.asString(select);
         String answer = "SELECT left.a1, right.a2, left.b1, right.b2 FROM t1 AS left INNER JOIN t2 AS right ON ((left.a1)=(right.a2))";
+        assertEquals(answer, result);
+    }
+
+    @Test
+    void selectLeftASOFJoinONTest() {
+        List<TableIndex> indexes = Collections.emptyList();
+        ClickHouseSchema.ClickHouseColumn a1_col = new ClickHouseSchema.ClickHouseColumn("a1",
+                ClickHouseSchema.ClickHouseLancerDataType.getRandom(), false, false, null);
+        ClickHouseSchema.ClickHouseColumn b1_col = new ClickHouseSchema.ClickHouseColumn("b1",
+                ClickHouseSchema.ClickHouseLancerDataType.getRandom(), false, false, null);
+        ClickHouseSchema.ClickHouseColumn a2_col = new ClickHouseSchema.ClickHouseColumn("a2",
+                ClickHouseSchema.ClickHouseLancerDataType.getRandom(), false, false, null);
+        ClickHouseSchema.ClickHouseColumn b2_col = new ClickHouseSchema.ClickHouseColumn("b2",
+                ClickHouseSchema.ClickHouseLancerDataType.getRandom(), false, false, null);
+        ClickHouseSchema.ClickHouseTable table1 = new ClickHouseSchema.ClickHouseTable("t1",
+                Arrays.asList(a1_col, b1_col), indexes, false);
+        ClickHouseSchema.ClickHouseTable table2 = new ClickHouseSchema.ClickHouseTable("t2",
+                Arrays.asList(a2_col, b2_col), indexes, false);
+        a1_col.setTable(table1);
+        b1_col.setTable(table1);
+        a2_col.setTable(table2);
+        b2_col.setTable(table2);
+
+        ClickHouseTableReference table1_ref = new ClickHouseTableReference(table1, null);
+        ClickHouseTableReference table2_ref = new ClickHouseTableReference(table2, null);
+
+        List<ClickHouseColumnReference> t1_col_ref = table1_ref.getColumnReferences();
+        ClickHouseColumnReference a1_ref = t1_col_ref.get(0);
+        ClickHouseColumnReference b1_ref = t1_col_ref.get(1);
+
+        List<ClickHouseColumnReference> t2_col_ref = table2_ref.getColumnReferences();
+        ClickHouseColumnReference a2_ref = t2_col_ref.get(0);
+        ClickHouseColumnReference b2_ref = t2_col_ref.get(1);
+
+        ClickHouseSelect select = new ClickHouseSelect();
+        select.setFetchColumns(Arrays.asList(a1_ref, a2_ref, b1_ref, b2_ref));
+        select.setFromClause(table1_ref);
+        ClickHouseBinaryComparisonOperation on = new ClickHouseBinaryComparisonOperation(a1_ref,
+                a2_ref, ClickHouseBinaryComparisonOperator.SMALLER_EQUALS);
+        ClickHouseExpression.ClickHouseJoin join = new ClickHouseExpression.ClickHouseJoin(table1_ref, table2_ref,
+                ClickHouseExpression.ClickHouseJoin.JoinType.LEFT, ClickHouseExpression.ClickHouseJoin.JoinModifier.ASOF, on);
+        select.setJoinClauses(Arrays.asList(join));
+        String result = ClickHouseVisitor.asString(select);
+        String answer = "SELECT t1.a1, t2.a2, t1.b1, t2.b2 FROM t1 LEFT ASOF JOIN t2 ON ((t1.a1)<=(t2.a2))";
         assertEquals(answer, result);
     }
 }

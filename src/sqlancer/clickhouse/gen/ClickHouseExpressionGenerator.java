@@ -215,13 +215,19 @@ public class ClickHouseExpressionGenerator
         }
     }
 
-    protected ClickHouseExpression.ClickHouseJoinOnClause generateJoinClause(ClickHouseTableReference leftTable,
+    protected ClickHouseBinaryComparisonOperation generateJoinClause(ClickHouseTableReference leftTable,
             ClickHouseTableReference rightTable) {
         List<ClickHouseColumnReference> leftColumns = leftTable.getColumnReferences();
         List<ClickHouseColumnReference> rightColumns = rightTable.getColumnReferences();
         ClickHouseExpression leftExpr = generateExpressionWithColumns(leftColumns, 2);
         ClickHouseExpression rightExpr = generateExpressionWithColumns(rightColumns, 2);
-        return new ClickHouseExpression.ClickHouseJoinOnClause(leftExpr, rightExpr);
+        ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator cmp = Randomly
+            .fromOptions(ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator.values());
+        /* TODO? Some RDMS support LIKE joins, but I am not sure about Clickhouse */
+        if (cmp == ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator.LIKE) {
+            cmp = ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator.EQUALS;
+        }
+        return new ClickHouseBinaryComparisonOperation(leftExpr, rightExpr, cmp);
     }
 
     @Override
@@ -267,11 +273,13 @@ public class ClickHouseExpressionGenerator
                         .get((int) Randomly.getNotCachedInteger(0, leftTables.size() - 1));
                 ClickHouseTableReference rightTable = new ClickHouseTableReference(Randomly.fromList(tables),
                         "right_" + i);
-                ClickHouseExpression.ClickHouseJoinOnClause joinClause = generateJoinClause(leftTable, rightTable);
+                ClickHouseBinaryComparisonOperation joinClause = generateJoinClause(leftTable, rightTable);
                 ClickHouseExpression.ClickHouseJoin.JoinType options = Randomly
                         .fromOptions(ClickHouseExpression.ClickHouseJoin.JoinType.values());
+                ClickHouseExpression.ClickHouseJoin.JoinModifier modifiers = Randomly
+                        .fromOptions(ClickHouseExpression.ClickHouseJoin.JoinModifier.values());
                 ClickHouseExpression.ClickHouseJoin j = new ClickHouseExpression.ClickHouseJoin(leftTable, rightTable,
-                        options, joinClause);
+                        options, modifiers, joinClause);
                 joinStatements.add(j);
                 leftTables.add(rightTable);
             }

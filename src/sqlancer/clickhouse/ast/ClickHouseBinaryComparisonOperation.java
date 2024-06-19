@@ -134,7 +134,14 @@ public class ClickHouseBinaryComparisonOperation extends ClickHouseExpression
             }
 
         },
-        EQUALS("=", "==") {
+        EQUALS("=") {
+            @Override
+            ClickHouseConstant apply(ClickHouseConstant left, ClickHouseConstant right) {
+                return left.applyEquals(right);
+            }
+
+        },
+        DOUBLE_EQUALS("==") {
             @Override
             ClickHouseConstant apply(ClickHouseConstant left, ClickHouseConstant right) {
                 return left.applyEquals(right);

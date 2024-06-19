@@ -136,30 +136,53 @@ public class ClickHouseToStringVisitor extends ToStringVisitor<ClickHouseExpress
     @Override
     public void visit(ClickHouseExpression.ClickHouseJoin join) {
         ClickHouseExpression.ClickHouseJoin.JoinType type = join.getType();
-        if (type == ClickHouseExpression.ClickHouseJoin.JoinType.CROSS) {
-            sb.append(" JOIN ");
-            visit(join.getRightTable());
-        } else if (type == ClickHouseExpression.ClickHouseJoin.JoinType.INNER) {
-            sb.append(" INNER JOIN ");
-            visit(join.getRightTable());
-        } else if (type == ClickHouseExpression.ClickHouseJoin.JoinType.LEFT_OUTER) {
-            sb.append(" LEFT OUTER JOIN ");
-            visit(join.getRightTable());
-        } else if (type == ClickHouseExpression.ClickHouseJoin.JoinType.RIGHT_OUTER) {
-            sb.append(" RIGHT OUTER JOIN ");
-            visit(join.getRightTable());
-        } else if (type == ClickHouseExpression.ClickHouseJoin.JoinType.FULL_OUTER) {
-            sb.append(" FULL OUTER JOIN ");
-            visit(join.getRightTable());
-        } else if (type == ClickHouseExpression.ClickHouseJoin.JoinType.LEFT_ANTI) {
-            sb.append(" LEFT ANTI JOIN ");
-            visit(join.getRightTable());
-        } else if (type == ClickHouseExpression.ClickHouseJoin.JoinType.RIGHT_ANTI) {
-            sb.append(" RIGHT ANTI JOIN ");
-            visit(join.getRightTable());
-        } else {
-            throw new UnsupportedOperationException();
+        ClickHouseExpression.ClickHouseJoin.JoinModifier modifier = join.getModifier();
+        if (type != ClickHouseExpression.ClickHouseJoin.JoinType.NONE) {
+            sb.append(" ");
+            switch (type) {
+                case CROSS:
+                    sb.append("CROSS");
+                    break;
+                case INNER:
+                    sb.append("INNER");
+                    break;
+                case LEFT:
+                    sb.append("LEFT");
+                    break;
+                case RIGHT:
+                    sb.append("RIGHT");
+                    break;
+                case FULL:
+                    sb.append("FULL");
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
         }
+        if (modifier != ClickHouseExpression.ClickHouseJoin.JoinModifier.NONE) {
+            sb.append(" ");
+            switch (modifier) {
+                case OUTER:
+                    sb.append("OUTER");
+                    break;
+                case ANTI:
+                    sb.append("ANTI");
+                    break;
+                case ANY:
+                    sb.append("ANY");
+                    break;
+                case ALL:
+                    sb.append("ALL");
+                    break;
+                case ASOF:
+                    sb.append("ASOF");
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+        sb.append(" JOIN ");
+        visit(join.getRightTable());
         ClickHouseExpression onClause = join.getOnClause();
         if (onClause != null) {
             sb.append(" ON ");
