@@ -54,7 +54,20 @@ public final class ClickHouseErrors {
                 // AST generation logic
                 "MULTIPLE_EXPRESSIONS_FOR_ALIAS", "AMBIGUOUS_IDENTIFIER", // https://github.com/ClickHouse/ClickHouse/issues/45389
                 "AMBIGUOUS_COLUMN_NAME", // same https://github.com/ClickHouse/ClickHouse/issues/45389
-                "Cannot parse number with multiple sign");
+                "Cannot parse number with multiple sign",
+
+                // Join related errors
+                "join expression contains column from left and right table, you may try experimental support of this feature by",
+                "join expression expected function",
+                "no inequality in ASOF JOIN ON section",
+                "ASOF join needs at least one equi-join column",
+                "ASOF JOIN expects exactly one inequality in ON section",
+                "MergeJoinAlgorithm is not implemented for strictness Anti",
+                "JOIN ON constant supported only with join algorithm 'hash'",
+                "Only `hash` join supports multiple ORs for keys in JOIN ON section",
+                "doesn't support multiple ORs for keys in JOIN ON section.",
+                "MergeJoinAlgorithm is not implemented for strictness RightAny",
+                "Can't execute any of specified algorithms for specified strictness/kind and right storage type");
     }
 
     public static void addExpectedExpressionErrors(ExpectedErrors errors) {

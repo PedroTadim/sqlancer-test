@@ -47,7 +47,7 @@ public abstract class ClickHouseExpression {
 
         private final ClickHouseTableReference leftTable;
         private final ClickHouseTableReference rightTable;
-        private ClickHouseBinaryComparisonOperation onClause;
+        private ClickHouseExpression onClause;
         private final ClickHouseJoin.JoinType type;
         private final ClickHouseJoin.JoinModifier modifier;
 
@@ -55,7 +55,8 @@ public abstract class ClickHouseExpression {
         private ClickHouseJoin.JoinModifier setModifierBasedOnType(ClickHouseJoin.JoinType type, ClickHouseJoin.JoinModifier modifier) {
             if ((modifier == ClickHouseJoin.JoinModifier.OUTER && (type == ClickHouseJoin.JoinType.INNER || type == ClickHouseJoin.JoinType.CROSS || type == ClickHouseJoin.JoinType.NONE)) ||
                 (modifier == ClickHouseJoin.JoinModifier.ANTI && type != ClickHouseJoin.JoinType.LEFT && type != ClickHouseJoin.JoinType.RIGHT) ||
-                ((modifier == ClickHouseJoin.JoinModifier.ANY || modifier == ClickHouseJoin.JoinModifier.ALL) && (type == ClickHouseJoin.JoinType.CROSS || type == ClickHouseJoin.JoinType.NONE)) ||
+                (modifier == ClickHouseJoin.JoinModifier.ALL && (type == ClickHouseJoin.JoinType.CROSS || type == ClickHouseJoin.JoinType.NONE)) ||
+                (modifier == ClickHouseJoin.JoinModifier.ANY && (type == ClickHouseJoin.JoinType.CROSS || type == ClickHouseJoin.JoinType.NONE || type == ClickHouseJoin.JoinType.FULL)) ||
                 (modifier == ClickHouseJoin.JoinModifier.ASOF && (type != ClickHouseJoin.JoinType.LEFT && type != ClickHouseJoin.JoinType.NONE))) {
                 return JoinModifier.NONE;
             }
@@ -63,12 +64,14 @@ public abstract class ClickHouseExpression {
         }
 
         public ClickHouseJoin(ClickHouseTableReference leftTable, ClickHouseTableReference rightTable,
-                ClickHouseJoin.JoinType type, ClickHouseJoin.JoinModifier modifier, ClickHouseBinaryComparisonOperation onClause) {
+                ClickHouseJoin.JoinType type, ClickHouseJoin.JoinModifier modifier, ClickHouseExpression onClause) {
             this.leftTable = leftTable;
             this.rightTable = rightTable;
-            this.onClause = onClause;
             this.type = type;
             this.modifier = setModifierBasedOnType(type, modifier);
+            if (type != JoinType.CROSS) {
+                this.onClause = onClause;
+            }
         }
 
         public ClickHouseJoin(ClickHouseTableReference leftTable, ClickHouseTableReference rightTable,
@@ -100,7 +103,7 @@ public abstract class ClickHouseExpression {
             return modifier;
         }
 
-        public void setOnClause(ClickHouseBinaryComparisonOperation onClause) {
+        public void setOnClause(ClickHouseExpression onClause) {
             this.onClause = onClause;
         }
 

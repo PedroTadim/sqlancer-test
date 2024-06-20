@@ -215,19 +215,58 @@ public class ClickHouseExpressionGenerator
         }
     }
 
-    protected ClickHouseBinaryComparisonOperation generateJoinClause(ClickHouseTableReference leftTable,
-            ClickHouseTableReference rightTable) {
-        List<ClickHouseColumnReference> leftColumns = leftTable.getColumnReferences();
-        List<ClickHouseColumnReference> rightColumns = rightTable.getColumnReferences();
-        ClickHouseExpression leftExpr = generateExpressionWithColumns(leftColumns, 2);
-        ClickHouseExpression rightExpr = generateExpressionWithColumns(rightColumns, 2);
+    private ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator generateNextComparison() {
         ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator cmp = Randomly
             .fromOptions(ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator.values());
         /* TODO? Some RDMS support LIKE joins, but I am not sure about Clickhouse */
         if (cmp == ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator.LIKE) {
             cmp = ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator.EQUALS;
         }
-        return new ClickHouseBinaryComparisonOperation(leftExpr, rightExpr, cmp);
+        return cmp;
+    }
+
+    protected ClickHouseExpression generateTopJoinSubCondition(List<ClickHouseColumnReference> leftColumns,
+                                                               List<ClickHouseColumnReference> rightColumns, int remainingDepth) {
+        if (remainingDepth == 1 || Randomly.getBoolean()) {
+            //BINARY_COMPARISON
+            ClickHouseBinaryComparisonOperation.ClickHouseBinaryComparisonOperator cmp = generateNextComparison();
+            ClickHouseExpression leftExpr = generateExpressionWithColumns(leftColumns, remainingDepth - 1);
+            ClickHouseExpression rightExpr = generateExpressionWithColumns(rightColumns, remainingDepth - 1);
+
+            //Rarely generate a predicate that might be pushed down to one of the sides
+            if (Randomly.getBooleanWithRatherLowProbability()) {
+                return new ClickHouseBinaryComparisonOperation(leftExpr, leftExpr, cmp);
+            }
+            if (Randomly.getBooleanWithRatherLowProbability()) {
+                return new ClickHouseBinaryComparisonOperation(rightExpr, rightExpr, cmp);
+            }
+            boolean swapped = Randomly.getBoolean();
+            return new ClickHouseBinaryComparisonOperation(swapped ? leftExpr : rightExpr,
+                    swapped ? rightExpr : leftExpr, cmp);
+        }
+        //BINARY_LOGICAL
+        return new ClickHouseBinaryLogicalOperation(generateTopJoinSubCondition(leftColumns, rightColumns, remainingDepth - 1),
+                generateTopJoinSubCondition(leftColumns, rightColumns, remainingDepth - 1),
+                ClickHouseBinaryLogicalOperation.ClickHouseBinaryLogicalOperator.getRandom());
+    }
+
+    protected ClickHouseExpression generateJoinClause(ClickHouseTableReference leftTable,
+                                                      ClickHouseTableReference rightTable) {
+        List<ClickHouseColumnReference> leftColumns = leftTable.getColumnReferences();
+        List<ClickHouseColumnReference> rightColumns = rightTable.getColumnReferences();
+
+        /* Give some probability to generate a completely random ON clause */
+        if (Randomly.getBooleanWithRatherLowProbability()) {
+            return generateExpression(ClickHouseLancerDataType.getRandom(), 3);
+        }
+        /* Generate a single join condition */
+        if (Randomly.getBooleanWithRatherLowProbability()) {
+            ClickHouseExpression leftExpr = generateExpressionWithColumns(leftColumns, 3);
+            ClickHouseExpression rightExpr = generateExpressionWithColumns(rightColumns, 3);
+            return new ClickHouseBinaryComparisonOperation(leftExpr, rightExpr, generateNextComparison());
+        }
+        /* Possibly generate AND and OR conditions */
+        return generateTopJoinSubCondition(leftColumns, rightColumns, 4);
     }
 
     @Override
@@ -273,7 +312,7 @@ public class ClickHouseExpressionGenerator
                         .get((int) Randomly.getNotCachedInteger(0, leftTables.size() - 1));
                 ClickHouseTableReference rightTable = new ClickHouseTableReference(Randomly.fromList(tables),
                         "right_" + i);
-                ClickHouseBinaryComparisonOperation joinClause = generateJoinClause(leftTable, rightTable);
+                ClickHouseExpression joinClause = generateJoinClause(leftTable, rightTable);
                 ClickHouseExpression.ClickHouseJoin.JoinType options = Randomly
                         .fromOptions(ClickHouseExpression.ClickHouseJoin.JoinType.values());
                 ClickHouseExpression.ClickHouseJoin.JoinModifier modifiers = Randomly
