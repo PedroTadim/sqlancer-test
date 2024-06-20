@@ -1,5 +1,6 @@
 package sqlancer.clickhouse.ast;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class ClickHouseSelect extends ClickHouseExpression {
     private List<ClickHouseExpression> fetchColumns = Collections.emptyList();
     private List<ClickHouseExpression.ClickHouseJoin> joinStatements = Collections.emptyList();
     private ClickHouseExpression havingClause;
-    private List<ClickHouseExpression.ClickHouseSetting> settings = Collections.emptyList();
+    private List<ClickHouseExpression.ClickHouseSetting> settings = new ArrayList<>();
 
     public enum SelectType {
         DISTINCT, ALL;

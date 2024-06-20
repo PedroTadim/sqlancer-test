@@ -62,6 +62,7 @@ public final class ClickHouseErrors {
                 "no inequality in ASOF JOIN ON section",
                 "ASOF join needs at least one equi-join column",
                 "ASOF JOIN expects exactly one inequality in ON section",
+                "ON expression expected non-empty left and right table expressions",
                 "MergeJoinAlgorithm is not implemented for strictness Anti",
                 "JOIN ON constant supported only with join algorithm 'hash'",
                 "Only `hash` join supports multiple ORs for keys in JOIN ON section",
